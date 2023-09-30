@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>点名器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        h2 {
+            margin-top: 20px;
+        }
+
+        #randomName {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 20px;
+        }
+
+        input[type="text"] {
+            padding: 5px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>点名器</h1>
+    <p id="randomName"></p>
+    <button id="randomButton">点名</button>
+
+    <h2>自定义名字列表</h2>
+    <input type="text" id="newName" placeholder="输入新的名字">
+    <button id="addNameButton">添加名字</button>
+    <input type="text" id="deleteName" placeholder="输入要删除的名字">
+    <button id="deleteNameButton">删除名字</button>
+    <button id="saveConfigButton">保存为.config</button>
+    <input type="file" id="importConfigInput">
+    <button id="importConfigButton">导入.config</button>
+
+    <script>
+        // 获取已保存的名字列表，如果没有则初始化为空数组
+        let names = JSON.parse(localStorage.getItem("names")) || [];
+
+        // 获取页面元素
+        const randomNameDisplay = document.getElementById("randomName");
+        const randomButton = document.getElementById("randomButton");
+        const newNameInput = document.getElementById("newName");
+        const addNameButton = document.getElementById("addNameButton");
+        const deleteNameInput = document.getElementById("deleteName");
+        const deleteNameButton = document.getElementById("deleteNameButton");
+        const saveConfigButton = document.getElementById("saveConfigButton");
+        const importConfigInput = document.getElementById("importConfigInput");
+        const importConfigButton = document.getElementById("importConfigButton");
+
+        // 点名功能
+        randomButton.addEventListener("click", function () {
+            if (names.length > 0) {
+                const randomIndex = Math.floor(Math.random() * names.length);
+                const randomName = names[randomIndex];
+                randomNameDisplay.textContent = `被点到的是：${randomName}`;
+            } else {
+                randomNameDisplay.textContent = "名字列表为空";
+            }
+        });
+
+        // 添加名字功能
+        addNameButton.addEventListener("click", function () {
+            const newName = newNameInput.value.trim();
+            if (newName !== "") {
+                names.push(newName);
+                newNameInput.value = ""; // 清空输入框
+                saveNames();
+            }
+        });
+
+        // 删除名字功能
+        deleteNameButton.addEventListener("click", function () {
+            const nameToDelete = deleteNameInput.value.trim();
+            if (nameToDelete !== "") {
+                const indexToDelete = names.indexOf(nameToDelete);
+                if (indexToDelete !== -1) {
+                    names.splice(indexToDelete, 1);
+                    deleteNameInput.value = ""; // 清空输入框
+                    saveNames();
+                } else {
+                    alert("名字不存在！");
+                }
+            }
+        });
+
+        // 保存名字列表到本地存储
+        function saveNames() {
+            localStorage.setItem("names", JSON.stringify(names));
+        }
+
+        // 保存名字列表为.config文件
+        saveConfigButton.addEventListener("click", function () {
+            const configData = JSON.stringify({ names });
+            const blob = new Blob([configData], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "names.config";
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // 导入.config文件中的名字列表
+        importConfigButton.addEventListener("click", function () {
+            const file = importConfigInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        if (Array.isArray(importedData.names)) {
+                            names = importedData.names;
+                            saveNames();
+                        } else {
+                            alert("无效的.config文件格式！");
+                        }
+                    } catch (error) {
+                        alert("无效的.config文件！");
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+    </script>
+</body>
+</html>
